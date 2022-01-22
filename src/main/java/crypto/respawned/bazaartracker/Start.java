@@ -1,5 +1,6 @@
 package crypto.respawned.bazaartracker;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 
 import org.apache.commons.cli.CommandLine;
@@ -11,7 +12,15 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.web3j.protocol.Web3j;
+import org.web3j.protocol.http.HttpService;
 
+import crypto.forestfish.enums.WalletOrigin;
+import crypto.forestfish.objects.evm.EVMBlockChain;
+import crypto.forestfish.objects.evm.EVMLocalWallet;
+import crypto.forestfish.objects.evm.EVMWalletBalance;
+import crypto.forestfish.utils.EVMUtils;
+import crypto.forestfish.utils.FormatUtils;
 import crypto.forestfish.utils.NotificationUtils;
 import crypto.forestfish.utils.NumUtils;
 import crypto.forestfish.utils.SystemUtils;
@@ -35,14 +44,33 @@ public class Start {
 			settings.setMaxHAUNT(1);
 			settings.setMinBRS(400.0d);
 			settings.setMinKINSHIP(450.0d);
-			settings.setGhstThresholdSTR("1200");
-			settings.setItemType(BazaarItemType.GOTCHI);
+			settings.setGhstThresholdSTR("35");
+			settings.setItemType(BazaarItemType.WEARABLE);
 			settings.setPolygonscanAPIKEY("xxxx");
 			
 		} else {
 			settings = parseCliArgs(args);
 			settings.sanityCheck();
 		}
+		
+		/**
+		 *  Initialize connection to MATIC network
+		 */
+		EVMBlockChain maticBlockChain = new EVMBlockChain("Matic/Polygon", "MATIC", 137, settings.getProviderURL(), "https://polygonscan.com/");
+		Web3j maticWeb3j = Web3j.build(new HttpService(maticBlockChain.getNodeURL()));
+
+		// Wallet setup + make sure MATIC balance is above 0
+		EVMLocalWallet maticWallet = null;
+		if (!"N/A".equals(settings.getWalletMnemonic())) maticWallet = new EVMLocalWallet("maticwallet", WalletOrigin.RECOVERY_MNEMONIC, "nopassword", settings.getWalletMnemonic());
+		if (!"N/A".equals(settings.getWalletPrivKey())) maticWallet = new EVMLocalWallet("maticwallet", WalletOrigin.PRIVATEKEY, "nopassword", settings.getWalletPrivKey());
+		if (null == maticWallet) maticWallet = new EVMLocalWallet("maticwallet", WalletOrigin.EXISTING_LOCALWALLETFILE, "nopassword", settings.getWalletMnemonic());
+		
+		EVMWalletBalance walletBalance = EVMUtils.getWalletBalanceMain(maticWeb3j, maticBlockChain, maticWallet);
+		if (walletBalance.getBalanceInWEI().intValue() == 0) {
+			LOGGER.error("wallet " + maticWallet.getCredentials().getAddress() + " has no funds! We gotta spend to pet.");
+			SystemUtils.halt();
+		}
+		LOGGER.info("Ready to move with bazaar wallet " + maticWallet.getCredentials().getAddress());
 
 		/**
 		 * ERC721 search (gotchis, land, ..)
@@ -59,7 +87,6 @@ public class Start {
 						NotificationUtils.pushover(settings.getApiTokenUser(), settings.getApiTokenApp(), "Gotchi BAZAAR time!", logMessage, MessagePriority.HIGH, "https://aavegotchi.com/baazaar/erc721/" + lst.getId(), "Bazaar URL", "siren");
 						LOGGER.info(logMessage);
 					}
-					SystemUtils.halt();
 				}
 
 				LOGGER.info("Wating " + settings.getTheGraphPollFrequencyInSeconds() + " seconds before next check");
@@ -80,6 +107,27 @@ public class Start {
 						String logMessage =  "We have a matching item match for string " + settings.getMatchString() + " and GHST threshold " + NumUtils.round(settings.getGhstThreshold(), 0) + ". URL: " + "https://aavegotchi.com/baazaar/erc1155/" + lst.getId();
 						NotificationUtils.pushover(settings.getApiTokenUser(), settings.getApiTokenApp(), "Gotchi BAZAAR time!", logMessage, MessagePriority.HIGH, "https://aavegotchi.com/baazaar/erc1155/" + lst.getId(), "Bazaar URL", "siren");
 						LOGGER.info(logMessage);
+						
+						/**
+						 *  Perform autobuy if configured
+						 */
+						if (settings.isAutoBuy()) {
+							
+							BigInteger priceinWei = new BigInteger(lst.getPriceInWei());
+							LOGGER.info("priceInWei: " + lst.getPriceInWei());
+							int txRetryThreshold = 3;
+							int confirmTimeInSecondsBeforeRetry = 20;
+							
+							// Prepare the request hex data
+							String buyRequest_hexData = settings.getErc1155ListingMethodID()                    // methodID for PET action (default 0x575ae876)
+									+ FormatUtils.makeUINT256WithDec2Hex(Integer.parseInt(lst.getId()))     	// uint256 param1, itemID (last param of the Bazaar URL) in hex
+									+ FormatUtils.makeUINT256WithDec2Hex(1)    							    	// uint256 param2, amount
+									+ FormatUtils.makeUINT256WithDec2Hex(priceinWei);                           // uint256 param3, priceInWei
+
+							boolean txAttemptsCompleted = EVMUtils.makeRequest(buyRequest_hexData, txRetryThreshold, confirmTimeInSecondsBeforeRetry, maticWeb3j, maticBlockChain, maticWallet, settings.getAavegotchiContractAddress(), settings.getGasLimit());
+							System.out.println("txAttemptsCompleted: " + txAttemptsCompleted);
+						}
+						
 					}
 					SystemUtils.halt();
 				}
@@ -139,6 +187,10 @@ public class Start {
 		// min kinship
 		Option minKinship = new Option("i", "minkinship", true, "Min kinship of the gotchi you are looking for");
 		options.addOption(minKinship);
+		
+		// attempt autobuy
+		Option autoBuy = new Option("x", "autobuy", false, "Attempt to autobuy with GHST in your wallet");
+		options.addOption(autoBuy);
 
 		HelpFormatter formatter = new HelpFormatter();
 		CommandLineParser parser = new DefaultParser();
@@ -151,6 +203,7 @@ public class Start {
 				if (cmd.getOptionValue("itemtype").equalsIgnoreCase("PARCEL")) settings.setItemType(BazaarItemType.PARCEL);
 				if (cmd.getOptionValue("itemtype").equalsIgnoreCase("GOTCHI")) settings.setItemType(BazaarItemType.GOTCHI);
 			}
+			if (cmd.hasOption("x")) settings.setAutoBuy(true);
 			if (cmd.hasOption("a")) settings.setApiTokenApp(cmd.getOptionValue("apitokenappid"));
 			if (cmd.hasOption("u")) settings.setApiTokenUser(cmd.getOptionValue("apitokenuserid"));
 			if (cmd.hasOption("m")) settings.setMatchString(cmd.getOptionValue("matchstring"));
