@@ -163,7 +163,7 @@ public class Start {
 		options.addOption(apiPolygonscan);
 
 		// item match string
-		Option matchSTR = new Option("m", "matchstring", true, "Bazaar item match string");
+		Option matchSTR = new Option("y", "matchstring", true, "Bazaar item match string");
 		options.addOption(matchSTR);
 
 		// item price threshold (in GHST)
@@ -180,9 +180,26 @@ public class Start {
 		options.addOption(minBRS);
 
 		// graph poll frequency
-		Option graphPollFrequencyInSeconds = new Option("p", "graphpollfrequency", true, "The Graph poll frequency");
+		Option graphPollFrequencyInSeconds = new Option("s", "graphpollfrequency", true, "The Graph poll frequency");
 		graphPollFrequencyInSeconds.setRequired(true);
 		options.addOption(graphPollFrequencyInSeconds);
+		
+		// MATIC/Polygon provider URL
+		Option providerURL = new Option("p", "providerurl", true, "MATIC/Polygon Provider URL (infura etc)");
+		providerURL.setRequired(true);
+		options.addOption(providerURL);
+
+		// wallet address
+		Option walletAdress = new Option("w", "wallet", true, "Wallet address");
+		options.addOption(walletAdress);
+
+		// wallet mnemonic
+		Option walletMnemonic = new Option("m", "walletmnemonic", true, "Wallet mnemonic");
+		options.addOption(walletMnemonic);
+		
+		// wallet mnemonic
+		Option walletPrivatekey = new Option("k", "walletprivkey", true, "Wallet private key");
+		options.addOption(walletPrivatekey);
 		
 		// min kinship
 		Option minKinship = new Option("i", "minkinship", true, "Min kinship of the gotchi you are looking for");
@@ -206,13 +223,18 @@ public class Start {
 			if (cmd.hasOption("x")) settings.setAutoBuy(true);
 			if (cmd.hasOption("a")) settings.setApiTokenApp(cmd.getOptionValue("apitokenappid"));
 			if (cmd.hasOption("u")) settings.setApiTokenUser(cmd.getOptionValue("apitokenuserid"));
-			if (cmd.hasOption("m")) settings.setMatchString(cmd.getOptionValue("matchstring"));
+			if (cmd.hasOption("y")) settings.setMatchString(cmd.getOptionValue("matchstring"));
 			if (cmd.hasOption("g")) settings.setGhstThresholdSTR(cmd.getOptionValue("ghstthreshold"));
 			if (cmd.hasOption("k")) settings.setPolygonscanAPIKEY(cmd.getOptionValue("apikeypolygonscan"));
+			if (cmd.hasOption("p")) settings.setProviderURL(cmd.getOptionValue("providerurl"));
+			if (cmd.hasOption("m")) settings.setWalletMnemonic(cmd.getOptionValue("walletmnemonic"));
+			if (cmd.hasOption("k")) settings.setWalletPrivKey(cmd.getOptionValue("walletprivkey"));
+			if (cmd.hasOption("w")) settings.setWalletAddress(cmd.getOptionValue("wallet"));
+			if (cmd.hasOption("g")) settings.setGasLimit(cmd.getOptionValue("gaslimit"));
 			if (cmd.hasOption("h")) settings.setMaxHAUNT(Integer.parseInt(cmd.getOptionValue("maxhaunt")));
 			if (cmd.hasOption("b")) settings.setMinBRS(Double.parseDouble(cmd.getOptionValue("minbrs")));
 			if (cmd.hasOption("i")) settings.setMinKINSHIP(Double.parseDouble(cmd.getOptionValue("minkinship")));
-			if (cmd.hasOption("p")) settings.setTheGraphPollFrequencyInSeconds(Integer.parseInt(cmd.getOptionValue("graphpollfrequency")));
+			if (cmd.hasOption("s")) settings.setTheGraphPollFrequencyInSeconds(Integer.parseInt(cmd.getOptionValue("graphpollfrequency")));
 			
 			settings.sanityCheck();
 			

@@ -47,10 +47,15 @@ Options:
  -h,--maxhaunt <arg>             Max haunt of the gotchi you are looking for
  -i,--minkinship <arg>           Min kinship of the gotchi you are looking for
  -k,--apikeypolygonscan <arg>    The Polygonscan API key (https://polygonscan.com/myapikey)
- -m,--matchstring <arg>          Bazaar item match string
+ -y,--matchstring <arg>          Bazaar item match string
  -p,--graphpollfrequency <arg>   The Graph poll frequency
  -t,--itemtype <arg>             Bazaar item type, WEARABLE, CONSUMABLE, PARCEL or GOTCHI
  -u,--apitokenuserid <arg>       API token user ID
+ -p,--providerurl <arg>          MATIC Provider URL (infura etc)
+ -t,--tokenids <arg>             csv decimal list of gotchi token ids (used unless wallet specified)
+ -m,--walletmnemonic <arg>       Wallet mnemonic
+ -k,--walletprivkey <arg>        Wallet private key 
+ -w,--wallet <arg>               Wallet address 
 
    ```
    
