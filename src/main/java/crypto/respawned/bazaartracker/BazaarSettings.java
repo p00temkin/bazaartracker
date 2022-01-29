@@ -249,6 +249,11 @@ public class BazaarSettings {
 
     public void sanityCheck() {
     	
+    	if (!this.getProviderURL().startsWith("http")) {
+    		LOGGER.error("The providerURL must be set to a valid value, begining with http..");
+    		SystemUtils.halt();
+    	}
+    	
     	if (true &&
     			((this.getItemType() == BazaarItemType.WEARABLE) || (this.getItemType() == BazaarItemType.CONSUMABLE)) &&
     			"".equals(this.getMatchString()) &&

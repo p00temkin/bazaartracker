@@ -40,13 +40,13 @@ public class Start {
 		if (debug) {
 			settings = new BazaarSettings();
 			
-			// GOTCHI KINSHIP DEBUG
-			settings.setMaxHAUNT(1);
-			settings.setMinBRS(400.0d);
-			settings.setMinKINSHIP(450.0d);
-			settings.setGhstThresholdSTR("35");
+			// DEBUG
+			settings.setGhstThresholdSTR("39");
 			settings.setItemType(BazaarItemType.WEARABLE);
-			settings.setPolygonscanAPIKEY("xxxx");
+			settings.setMatchString("Guy Fawkes");
+			//settings.setProviderURL("https://polygon-mainnet.infura.io/v3/xxxxx");
+			settings.setAutoBuy(true);
+			settings.sanityCheck();
 			
 		} else {
 			settings = parseCliArgs(args);
@@ -83,10 +83,21 @@ public class Start {
 				} else {
 					for (ERC721Listing lst: matchingBazaarItems721) {
 						lst.update();
-						String logMessage =  "We have a matching gotchi: " +  "[brs=" + lst.getGotchi().getBaseRarityScore() + ",kinship=" + lst.getGotchi().getKinship() + ",haunt=" + lst.getGotchi().getHauntId() + ",ghst=" + NumUtils.round(lst.getGotchi().getGhostBalance(), 0) + "] and GHST threshold " + NumUtils.round(settings.getGhstThreshold(), 0) + " for price " + lst.getPriceInGHSTSTR() + " GHST. Name: " + lst.getGotchi().getName() + " URL: " + "https://aavegotchi.com/baazaar/erc721/" + lst.getId();
-						NotificationUtils.pushover(settings.getApiTokenUser(), settings.getApiTokenApp(), "Gotchi BAZAAR time!", logMessage, MessagePriority.HIGH, "https://aavegotchi.com/baazaar/erc721/" + lst.getId(), "Bazaar URL", "siren");
-						LOGGER.info(logMessage);
+						
+						/**
+						 *  autobuy if configured
+						 */
+						if (settings.isAutoBuy()) {
+							LOGGER.warn("TODO");
+							SystemUtils.halt();
+						} else {
+							String logMessage =  "We have a matching gotchi: " +  "[brs=" + lst.getGotchi().getBaseRarityScore() + ",kinship=" + lst.getGotchi().getKinship() + ",haunt=" + lst.getGotchi().getHauntId() + ",ghst=" + NumUtils.round(lst.getGotchi().getGhostBalance(), 0) + "] and GHST threshold " + NumUtils.round(settings.getGhstThreshold(), 0) + " for price " + lst.getPriceInGHSTSTR() + " GHST. Name: " + lst.getGotchi().getName() + " URL: " + "https://aavegotchi.com/baazaar/erc721/" + lst.getId();
+							NotificationUtils.pushover(settings.getApiTokenUser(), settings.getApiTokenApp(), "Gotchi BAZAAR time!", logMessage, MessagePriority.HIGH, "https://aavegotchi.com/baazaar/erc721/" + lst.getId(), "Bazaar URL", "siren");
+							LOGGER.info(logMessage);
+						}
 					}
+					LOGGER.info("Halting.");
+					SystemUtils.halt();
 				}
 
 				LOGGER.info("Wating " + settings.getTheGraphPollFrequencyInSeconds() + " seconds before next check");
@@ -104,14 +115,15 @@ public class Start {
 					// Nothing available, keep going
 				} else {
 					for (ERC1155Listing lst: matchingBazaarItems1155) {
-						String logMessage =  "We have a matching item match for string " + settings.getMatchString() + " and GHST threshold " + NumUtils.round(settings.getGhstThreshold(), 0) + ". URL: " + "https://aavegotchi.com/baazaar/erc1155/" + lst.getId();
-						NotificationUtils.pushover(settings.getApiTokenUser(), settings.getApiTokenApp(), "Gotchi BAZAAR time!", logMessage, MessagePriority.HIGH, "https://aavegotchi.com/baazaar/erc1155/" + lst.getId(), "Bazaar URL", "siren");
-						LOGGER.info(logMessage);
+						lst.update();
 						
 						/**
-						 *  Perform autobuy if configured
+						 *  autobuy if configured
 						 */
 						if (settings.isAutoBuy()) {
+							String logMessage =  "We have a matching item match for string " + settings.getMatchString() + " and GHST threshold " + NumUtils.round(settings.getGhstThreshold(), 0) + " Buying it for " + NumUtils.round(lst.getPriceInGHST(), 0) + ". URL: " + "https://aavegotchi.com/baazaar/erc1155/" + lst.getId();
+							NotificationUtils.pushover(settings.getApiTokenUser(), settings.getApiTokenApp(), "Gotchi BAZAAR time!", logMessage, MessagePriority.HIGH, "https://aavegotchi.com/baazaar/erc1155/" + lst.getId(), "Bazaar URL", "siren");
+							LOGGER.info(logMessage);
 							
 							BigInteger priceinWei = new BigInteger(lst.getPriceInWei());
 							LOGGER.info("priceInWei: " + lst.getPriceInWei());
@@ -126,9 +138,14 @@ public class Start {
 
 							boolean txAttemptsCompleted = EVMUtils.makeRequest(buyRequest_hexData, txRetryThreshold, confirmTimeInSecondsBeforeRetry, maticWeb3j, maticBlockChain, maticWallet, settings.getAavegotchiContractAddress(), settings.getGasLimit());
 							System.out.println("txAttemptsCompleted: " + txAttemptsCompleted);
+						} else {
+							String logMessage =  "We have a matching item match for string " + settings.getMatchString() + " and GHST threshold " + NumUtils.round(settings.getGhstThreshold(), 0) + " Available for " + NumUtils.round(lst.getPriceInGHST(), 0) + ". URL: " + "https://aavegotchi.com/baazaar/erc1155/" + lst.getId();
+							NotificationUtils.pushover(settings.getApiTokenUser(), settings.getApiTokenApp(), "Gotchi BAZAAR time!", logMessage, MessagePriority.HIGH, "https://aavegotchi.com/baazaar/erc1155/" + lst.getId(), "Bazaar URL", "siren");
+							LOGGER.info(logMessage);
 						}
 						
 					}
+					LOGGER.info("Halting.");
 					SystemUtils.halt();
 				}
 
