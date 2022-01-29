@@ -8,58 +8,58 @@ import crypto.forestfish.utils.SystemUtils;
 import crypto.respawned.bazaartracker.enums.BazaarItemType;
 
 public class BazaarSettings {
-	
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(BazaarSettings.class);
 
 	// App specific
-    private String theGraphQueryEndpointURI = "https://api.thegraph.com/subgraphs/name/aavegotchi/aavegotchi-core-matic";
+	private String theGraphQueryEndpointURI = "https://api.thegraph.com/subgraphs/name/aavegotchi/aavegotchi-core-matic";
 	private int theGraphPollFrequencyInSeconds = 60;
-    private String erc1155ListingMethodID = "0x575ae876";
-    private boolean autoBuy = false;
-    
-    // Generic
-    private String aavegotchiContractAddress = "0x86935f11c86623dec8a25696e1c19a8659cbf95d";
-    private String gasLimit = "200000";
-    
-    // Wallet
-    private String providerURL = "";
-    private String walletAddress = "";
-    private String walletMnemonic = "N/A"; // only needed once to create the wallet if it does not exist
-    private String walletPrivKey = "N/A"; // only needed once to create the wallet if it does not exist
-	
+	private String erc1155ListingMethodID = "0x575ae876";
+	private boolean autoBuy = false;
+
+	// Generic
+	private String aavegotchiContractAddress = "0x86935f11c86623dec8a25696e1c19a8659cbf95d";
+	private String gasLimit = "200000";
+
+	// Wallet
+	private String providerURL = "";
+	private String walletAddress = "";
+	private String walletMnemonic = "N/A"; // only needed once to create the wallet if it does not exist
+	private String walletPrivKey = "N/A"; // only needed once to create the wallet if it does not exist
+
 	// Wearable/consumable specific
 	private String matchString = "";
-    
+
 	// Gotchi specific
 	private Double maxBRS = 100000.0d; // set to ~ 350 to find normies
 	private Double minBRS = 2000.0d;
 	private Double minKINSHIP = 400.0d;
 	private Double minGHSTBalance = 0.0d;
 	private Integer maxHAUNT = 100;
-	
+
 	// Price in GHST threshold
 	private String ghstThresholdSTR = "";
-    private Double ghstThreshold = 0.0d;
-	
-    // API keys
-    private String apiTokenApp = "";
-    private String apiTokenUser = "";
-    private String polygonscanAPIKEY = "";
-    
-    private BazaarItemType itemType = BazaarItemType.CONSUMABLE;
-    
+	private Double ghstThreshold = 0.0d;
+
+	// API keys
+	private String apiTokenApp = "";
+	private String apiTokenUser = "";
+	private String polygonscanAPIKEY = "";
+
+	private BazaarItemType itemType = BazaarItemType.CONSUMABLE;
+
 	public BazaarSettings() {
 		super();
 	}
-	
+
 	public String getTheGraphQueryEndpointURI() {
 		return theGraphQueryEndpointURI;
 	}
-	
+
 	public void setTheGraphQueryEndpointURI(String theGraphQueryEndpointURI) {
 		this.theGraphQueryEndpointURI = theGraphQueryEndpointURI;
 	}
-	
+
 	public int getTheGraphPollFrequencyInSeconds() {
 		return theGraphPollFrequencyInSeconds;
 	}
@@ -83,7 +83,7 @@ public class BazaarSettings {
 	public void setApiTokenUser(String apiTokenUser) {
 		this.apiTokenUser = apiTokenUser;
 	}
-	
+
 	public String getGhstThresholdSTR() {
 		return ghstThresholdSTR;
 	}
@@ -164,7 +164,7 @@ public class BazaarSettings {
 	public void setMinGHSTBalance(Double minGHSTBalance) {
 		this.minGHSTBalance = minGHSTBalance;
 	}
-	
+
 	public String getErc1155ListingMethodID() {
 		return erc1155ListingMethodID;
 	}
@@ -172,7 +172,7 @@ public class BazaarSettings {
 	public void setErc1155ListingMethodID(String erc1155ListingMethodID) {
 		this.erc1155ListingMethodID = erc1155ListingMethodID;
 	}
-	
+
 	public boolean isAutoBuy() {
 		return autoBuy;
 	}
@@ -230,39 +230,41 @@ public class BazaarSettings {
 	}
 
 	public void print() {
-        System.out.println("Settings:");
-        System.out.println(" - erc1155ListingMethodID: " + this.getErc1155ListingMethodID());
-        System.out.println(" - autobuy: " + this.isAutoBuy());
-        System.out.println(" - apiTokenApp: " + this.getApiTokenApp());
-        System.out.println(" - apiTokenUser: " + this.getApiTokenUser());
-        System.out.println(" - polygonscanAPIKEY: " + this.getPolygonscanAPIKEY());
-        System.out.println(" - theGraphPollFrequencyInSeconds: " + this.getTheGraphPollFrequencyInSeconds());
-        System.out.println(" - itemType: " + itemType);
-        System.out.println(" - matchString: " + this.getMatchString());
-        System.out.println(" - maxBRS: " + this.getMaxBRS());
-        System.out.println(" - minBRS: " + this.getMinBRS());
-        System.out.println(" - minKINSHIP: " + this.getMinKINSHIP());
-        System.out.println(" - maxHAUNT: " + this.getMaxHAUNT());
-        System.out.println(" - minGHSTBalance: " + this.getMinGHSTBalance());
-        System.out.println(" - ghstThreshold: " + NumUtils.round(this.getGhstThreshold(), 0));
-    }
+		System.out.println("Settings:");
+		System.out.println(" - erc1155ListingMethodID: " + this.getErc1155ListingMethodID());
+		System.out.println(" - autobuy: " + this.isAutoBuy());
+		System.out.println(" - apiTokenApp: " + this.getApiTokenApp());
+		System.out.println(" - apiTokenUser: " + this.getApiTokenUser());
+		System.out.println(" - polygonscanAPIKEY: " + this.getPolygonscanAPIKEY());
+		System.out.println(" - theGraphPollFrequencyInSeconds: " + this.getTheGraphPollFrequencyInSeconds());
+		System.out.println(" - itemType: " + itemType);
+		System.out.println(" - matchString: " + this.getMatchString());
+		System.out.println(" - maxBRS: " + this.getMaxBRS());
+		System.out.println(" - minBRS: " + this.getMinBRS());
+		System.out.println(" - minKINSHIP: " + this.getMinKINSHIP());
+		System.out.println(" - maxHAUNT: " + this.getMaxHAUNT());
+		System.out.println(" - minGHSTBalance: " + this.getMinGHSTBalance());
+		System.out.println(" - ghstThreshold: " + NumUtils.round(this.getGhstThreshold(), 0));
+	}
 
-    public void sanityCheck() {
-    	
-    	if (!this.getProviderURL().startsWith("http")) {
-    		LOGGER.error("The providerURL must be set to a valid value, begining with http..");
-    		SystemUtils.halt();
-    	}
-    	
-    	if (true &&
-    			((this.getItemType() == BazaarItemType.WEARABLE) || (this.getItemType() == BazaarItemType.CONSUMABLE)) &&
-    			"".equals(this.getMatchString()) &&
-    			true) {
-    		LOGGER.error("You need to specify a matchstring when searching for Bazaaar WEARABLE/CONSUMABLE items");
-    		SystemUtils.halt();
-    	}
-    	
-    	return;
-    }
-      
+	public void sanityCheck() {
+
+		if (this.isAutoBuy()) {
+			if (!this.getProviderURL().startsWith("http")) {
+				LOGGER.error("The providerURL must be set to a valid value, begining with http..");
+				SystemUtils.halt();
+			}
+		}
+
+		if (true &&
+				((this.getItemType() == BazaarItemType.WEARABLE) || (this.getItemType() == BazaarItemType.CONSUMABLE)) &&
+				"".equals(this.getMatchString()) &&
+				true) {
+			LOGGER.error("You need to specify a matchstring when searching for Bazaaar WEARABLE/CONSUMABLE items");
+			SystemUtils.halt();
+		}
+
+		return;
+	}
+
 }

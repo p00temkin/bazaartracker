@@ -34,12 +34,12 @@ public class Start {
 
 	public static void main(String[] args) {
 		LOGGER.info("bazaarTracker init()");
-		
+
 		boolean debug = false;
 		BazaarSettings settings = null;
 		if (debug) {
 			settings = new BazaarSettings();
-			
+
 			// DEBUG
 			settings.setGhstThresholdSTR("39");
 			settings.setItemType(BazaarItemType.WEARABLE);
@@ -47,30 +47,34 @@ public class Start {
 			//settings.setProviderURL("https://polygon-mainnet.infura.io/v3/xxxxx");
 			settings.setAutoBuy(true);
 			settings.sanityCheck();
-			
+
 		} else {
 			settings = parseCliArgs(args);
 			settings.sanityCheck();
 		}
-		
+
 		/**
 		 *  Initialize connection to MATIC network
 		 */
-		EVMBlockChain maticBlockChain = new EVMBlockChain("Matic/Polygon", "MATIC", 137, settings.getProviderURL(), "https://polygonscan.com/");
-		Web3j maticWeb3j = Web3j.build(new HttpService(maticBlockChain.getNodeURL()));
-
-		// Wallet setup + make sure MATIC balance is above 0
+		EVMBlockChain maticBlockChain = null;
+		Web3j maticWeb3j = null;
 		EVMLocalWallet maticWallet = null;
-		if (!"N/A".equals(settings.getWalletMnemonic())) maticWallet = new EVMLocalWallet("maticwallet", WalletOrigin.RECOVERY_MNEMONIC, "nopassword", settings.getWalletMnemonic());
-		if (!"N/A".equals(settings.getWalletPrivKey())) maticWallet = new EVMLocalWallet("maticwallet", WalletOrigin.PRIVATEKEY, "nopassword", settings.getWalletPrivKey());
-		if (null == maticWallet) maticWallet = new EVMLocalWallet("maticwallet", WalletOrigin.EXISTING_LOCALWALLETFILE, "nopassword", settings.getWalletMnemonic());
-		
-		EVMWalletBalance walletBalance = EVMUtils.getWalletBalanceMain(maticWeb3j, maticBlockChain, maticWallet);
-		if (walletBalance.getBalanceInWEI().intValue() == 0) {
-			LOGGER.error("wallet " + maticWallet.getCredentials().getAddress() + " has no funds! We gotta spend to pet.");
-			SystemUtils.halt();
+		if (settings.isAutoBuy()) {
+			maticBlockChain = new EVMBlockChain("Matic/Polygon", "MATIC", 137, settings.getProviderURL(), "https://polygonscan.com/");
+			maticWeb3j = Web3j.build(new HttpService(maticBlockChain.getNodeURL()));
+
+			// Wallet setup + make sure MATIC balance is above 0
+			if (!"N/A".equals(settings.getWalletMnemonic())) maticWallet = new EVMLocalWallet("maticwallet", WalletOrigin.RECOVERY_MNEMONIC, "nopassword", settings.getWalletMnemonic());
+			if (!"N/A".equals(settings.getWalletPrivKey())) maticWallet = new EVMLocalWallet("maticwallet", WalletOrigin.PRIVATEKEY, "nopassword", settings.getWalletPrivKey());
+			if (null == maticWallet) maticWallet = new EVMLocalWallet("maticwallet", WalletOrigin.EXISTING_LOCALWALLETFILE, "nopassword", settings.getWalletMnemonic());
+
+			EVMWalletBalance walletBalance = EVMUtils.getWalletBalanceMain(maticWeb3j, maticBlockChain, maticWallet);
+			if (walletBalance.getBalanceInWEI().intValue() == 0) {
+				LOGGER.error("wallet " + maticWallet.getCredentials().getAddress() + " has no funds! We gotta spend to pet.");
+				SystemUtils.halt();
+			}
+			LOGGER.info("Ready to move with bazaar wallet " + maticWallet.getCredentials().getAddress());
 		}
-		LOGGER.info("Ready to move with bazaar wallet " + maticWallet.getCredentials().getAddress());
 
 		/**
 		 * ERC721 search (gotchis, land, ..)
@@ -83,7 +87,7 @@ public class Start {
 				} else {
 					for (ERC721Listing lst: matchingBazaarItems721) {
 						lst.update();
-						
+
 						/**
 						 *  autobuy if configured
 						 */
@@ -116,7 +120,7 @@ public class Start {
 				} else {
 					for (ERC1155Listing lst: matchingBazaarItems1155) {
 						lst.update();
-						
+
 						/**
 						 *  autobuy if configured
 						 */
@@ -124,12 +128,12 @@ public class Start {
 							String logMessage =  "We have a matching item match for string " + settings.getMatchString() + " and GHST threshold " + NumUtils.round(settings.getGhstThreshold(), 0) + " Buying it for " + NumUtils.round(lst.getPriceInGHST(), 0) + ". URL: " + "https://aavegotchi.com/baazaar/erc1155/" + lst.getId();
 							NotificationUtils.pushover(settings.getApiTokenUser(), settings.getApiTokenApp(), "Gotchi BAZAAR time!", logMessage, MessagePriority.HIGH, "https://aavegotchi.com/baazaar/erc1155/" + lst.getId(), "Bazaar URL", "siren");
 							LOGGER.info(logMessage);
-							
+
 							BigInteger priceinWei = new BigInteger(lst.getPriceInWei());
 							LOGGER.info("priceInWei: " + lst.getPriceInWei());
 							int txRetryThreshold = 3;
 							int confirmTimeInSecondsBeforeRetry = 20;
-							
+
 							// Prepare the request hex data
 							String buyRequest_hexData = settings.getErc1155ListingMethodID()                    // methodID for PET action (default 0x575ae876)
 									+ FormatUtils.makeUINT256WithDec2Hex(Integer.parseInt(lst.getId()))     	// uint256 param1, itemID (last param of the Bazaar URL) in hex
@@ -143,7 +147,7 @@ public class Start {
 							NotificationUtils.pushover(settings.getApiTokenUser(), settings.getApiTokenApp(), "Gotchi BAZAAR time!", logMessage, MessagePriority.HIGH, "https://aavegotchi.com/baazaar/erc1155/" + lst.getId(), "Bazaar URL", "siren");
 							LOGGER.info(logMessage);
 						}
-						
+
 					}
 					LOGGER.info("Halting.");
 					SystemUtils.halt();
@@ -187,11 +191,11 @@ public class Start {
 		Option ghstthreshold = new Option("g", "ghstthreshold", true, "Bazaar item threshold in GHST");
 		ghstthreshold.setRequired(true);
 		options.addOption(ghstthreshold);
-		
+
 		// max haunt (GOTCHI)
 		Option maxHaunt = new Option("h", "maxhaunt", true, "Max haunt of the gotchi you are looking for");
 		options.addOption(maxHaunt);
-		
+
 		// min BRS (GOTCHI)
 		Option minBRS = new Option("b", "minbrs", true, "Min BRS for your Gotchi");
 		options.addOption(minBRS);
@@ -200,10 +204,9 @@ public class Start {
 		Option graphPollFrequencyInSeconds = new Option("s", "graphpollfrequency", true, "The Graph poll frequency");
 		graphPollFrequencyInSeconds.setRequired(true);
 		options.addOption(graphPollFrequencyInSeconds);
-		
+
 		// MATIC/Polygon provider URL
 		Option providerURL = new Option("p", "providerurl", true, "MATIC/Polygon Provider URL (infura etc)");
-		providerURL.setRequired(true);
 		options.addOption(providerURL);
 
 		// wallet address
@@ -213,15 +216,15 @@ public class Start {
 		// wallet mnemonic
 		Option walletMnemonic = new Option("m", "walletmnemonic", true, "Wallet mnemonic");
 		options.addOption(walletMnemonic);
-		
+
 		// wallet mnemonic
 		Option walletPrivatekey = new Option("k", "walletprivkey", true, "Wallet private key");
 		options.addOption(walletPrivatekey);
-		
+
 		// min kinship
 		Option minKinship = new Option("i", "minkinship", true, "Min kinship of the gotchi you are looking for");
 		options.addOption(minKinship);
-		
+
 		// attempt autobuy
 		Option autoBuy = new Option("x", "autobuy", false, "Attempt to autobuy with GHST in your wallet");
 		options.addOption(autoBuy);
@@ -252,9 +255,9 @@ public class Start {
 			if (cmd.hasOption("b")) settings.setMinBRS(Double.parseDouble(cmd.getOptionValue("minbrs")));
 			if (cmd.hasOption("i")) settings.setMinKINSHIP(Double.parseDouble(cmd.getOptionValue("minkinship")));
 			if (cmd.hasOption("s")) settings.setTheGraphPollFrequencyInSeconds(Integer.parseInt(cmd.getOptionValue("graphpollfrequency")));
-			
+
 			settings.sanityCheck();
-			
+
 			settings.print();
 
 		} catch (ParseException e) {
