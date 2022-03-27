@@ -23,39 +23,41 @@ mvn clean package install
 Match Bazaar "Guy Fawkes" ERC1155 wearable with GHST threshold of 40, pushover UserID A and AppID B, and check every 2 minutes: 
 
    ```
-   java -jar ./bazaartracker.jar -t WEARABLE -m "Guy Fawkes" -g 40.0 -u A -a B -p 120
+   java -jar ./bazaartracker.jar -t WEARABLE -q "Guy Fawkes" -g 40.0 -u A -a B -s 120
    ```
    
 Match a gotchi with BRS 537, disregard kinship, GHST threshold of 1200, pushover UserID A and AppID B, and check every 2 minutes: 
    
    ```
-   java -jar ./bazaartracker.jar -t GOTCHI -g 1200.0 -b 537.0 -i 0.0 -u A -a B -p 120
+   java -jar ./bazaartracker.jar -t GOTCHI -g 1200.0 -b 537.0 -i 0.0 -u A -a B -s 120
    ```
  
  Match a Haunt1 gotchi with kinship 497, disregard brs, GHST threshold of 1500, pushover UserID A and AppID B, and check every 2 minutes: 
    
    ```
-   java -jar ./bazaartracker.jar -t GOTCHI -g 1500.0 -i 497.0 -b 0.0 -u A -a B -p 120
+   java -jar ./bazaartracker.jar -t GOTCHI -g 1500.0 -i 497.0 -b 0.0 -u A -a B -s 120
    ```
  
  
 Options:
    ```
+usage:
  -a,--apitokenappid <arg>        API token app ID
  -b,--minbrs <arg>               Min BRS for your Gotchi
  -g,--ghstthreshold <arg>        Bazaar item threshold in GHST
  -h,--maxhaunt <arg>             Max haunt of the gotchi you are looking for
  -i,--minkinship <arg>           Min kinship of the gotchi you are looking for
- -k,--apikeypolygonscan <arg>    The Polygonscan API key (https://polygonscan.com/myapikey)
- -y,--matchstring <arg>          Bazaar item match string
- -p,--graphpollfrequency <arg>   The Graph poll frequency
+ -k,--walletprivkey <arg>        Wallet private key
+ -m,--walletmnemonic <arg>       Wallet mnemonic
+ -o,--apikeypolygonscan <arg>    The Polygonscan API key (https://polygonscan.com/myapikey)
+ -p,--providerurl <arg>          MATIC/Polygon Provider URL (infura etc)
+ -q,--matchstring <arg>          Bazaar item name match string
+ -s,--graphpollfrequency <arg>   The Graph poll frequency
  -t,--itemtype <arg>             Bazaar item type, WEARABLE, CONSUMABLE, PARCEL or GOTCHI
  -u,--apitokenuserid <arg>       API token user ID
- -p,--providerurl <arg>          MATIC Provider URL (infura etc)
- -t,--tokenids <arg>             csv decimal list of gotchi token ids (used unless wallet specified)
- -m,--walletmnemonic <arg>       Wallet mnemonic
- -k,--walletprivkey <arg>        Wallet private key 
- -w,--wallet <arg>               Wallet address 
+ -w,--wallet <arg>               Wallet address
+ -x,--autobuy                    Attempt to autobuy with GHST in your wallet
+ -y,--minghst <arg>              Minimum GHST in target gotchi pocket
 
    ```
    

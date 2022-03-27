@@ -5,10 +5,15 @@ import java.util.HashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import org.web3j.protocol.Web3j;
 import com.netflix.graphql.dgs.client.GraphQLResponse;
 
 import crypto.forestfish.enums.PolygonERC20Token;
+import crypto.forestfish.objects.evm.ERC20Contract;
+import crypto.forestfish.objects.evm.EVMBlockChain;
+import crypto.forestfish.objects.ipfs.WalletBalance;
+import crypto.forestfish.utils.ContractMapper;
+import crypto.forestfish.utils.EVMUtils;
 import crypto.forestfish.utils.GraphQLUtils;
 import crypto.forestfish.utils.NumUtils;
 import crypto.forestfish.utils.PolygonUtils;
@@ -25,7 +30,7 @@ public class GotchiGraphQLUtils {
 	private static final Logger LOGGER = LoggerFactory.getLogger(GotchiGraphQLUtils.class);
 
 	public static Integer getBazaarItemTypeIdForString(BazaarSettings settings, String itemTypeMatchStr) {
-		
+
 		// https://thegraph.com/hosted-service/subgraph/aavegotchi/aavegotchi-core-matic
 		String graphqlQuery = "{"
 				+ "itemTypes(where:{name_contains: \"" + itemTypeMatchStr + "\"}) {name, id}"
@@ -116,7 +121,7 @@ public class GotchiGraphQLUtils {
 		return matches;
 	}
 
-	public static ArrayList<ERC721Listing> getBazaarERC721sWithString(BazaarSettings settings) {
+	public static ArrayList<ERC721Listing> getBazaarERC721sWithString(BazaarSettings settings, Web3j web3j, EVMBlockChain maticBlockChain) {
 
 		ArrayList<ERC721Listing> candidates = new ArrayList<ERC721Listing>();
 		ArrayList<ERC721Listing> matches = new ArrayList<ERC721Listing>();
@@ -197,37 +202,54 @@ public class GotchiGraphQLUtils {
 					System.out.println(" - price: " + erc721item.getPriceInGHST());
 					System.out.println(" - locked: " + erc721item.getGotchi().isLocked());
 				}
-				
+
 				// Not sure why still there (sold but not cancelled)
 				if (false ||
-						//(erc721item.getPriceInGHST() >= 20000.0d)  || // remove all above threshold?
 						(brsScore <= 100.0d) || // burned gotchis get brsScore of 0.0 
-						//(!erc721item.getGotchi().isLocked()) || // gotchis for sale should always be locked, but seems not?
+						//(!erc721item.getGotchi().isLocked()) || // gotchis for sale should always be locked, but seems not the case?
 						!"0".equals(erc721item.getTimePurchased()) || // already sold unless 0
 						false) {
 					// disregard
 				} else {
 
 					boolean ghstBalanceRequirementFulfilled = true;
+					Double ghstBalance = 0.0d;
 
-					// Grab the wallet GHST
-					if (settings.getMinGHSTBalance() > 0.1d) { // worth making use of the polygonscan key?
+					// Grab the wallet GHST (if required as part of the query)
+					if (settings.getMinGHSTBalance() > 0.1d) { 
+
+						String ghstContractaddress = ContractMapper.resolveContractAddressFor(PolygonERC20Token.GHST);
+						ERC20Contract ghstContract = new ERC20Contract("GHST", ghstContractaddress);
+
+						Double ghstBalance1 = 0.0d;
 						if (settings.getPolygonscanAPIKEY().length() >= 4) {
-							Double ghstBalance = PolygonUtils.getERC20WalletBalance10kTx(erc721item.getGotchi().getEscrow(), settings.getPolygonscanAPIKEY(), PolygonERC20Token.GHST);
-							LOGGER.debug("gotchi GHST balance: " + NumUtils.round(ghstBalance, 2));
-							Gotchi g = erc721item.getGotchi();
-							g.setGhostBalance(ghstBalance);
-							erc721item.setGotchi(g);
+							ghstBalance1 = PolygonUtils.getERC20WalletBalance10kTx(erc721item.getGotchi().getEscrow(), settings.getPolygonscanAPIKEY(), PolygonERC20Token.GHST);
+							LOGGER.debug("gotchi GHST balance (using polygonscan): " + NumUtils.round(ghstBalance1, 2));
+						} 
 
-							if (erc721item.getGotchi().getGhostBalance() < settings.getMinGHSTBalance()) {
-								ghstBalanceRequirementFulfilled = false; 
-							}
+						WalletBalance bal = EVMUtils.getWalletBalanceForERC20Token(web3j, maticBlockChain, erc721item.getGotchi().getEscrow(), ghstContract);
+						Double ghstBalance2 = bal.getBalance().doubleValue();
 
-						}
+						LOGGER.debug("gotchi GHST balance (using rpc node): " + NumUtils.round(ghstBalance2, 2));
+						
+						if (ghstBalance1 > 0.0d) ghstBalance = ghstBalance1;
+						if (ghstBalance2 > 0.0d) ghstBalance = ghstBalance2;
+
 					}
 
-					LOGGER.debug(" - " + "haunt: " + haunt + " brs: " + NumUtils.round(brsScore, 2) + ", kinship=" + erc721item.getGotchi().getKinship() + " priceInGHST: " + NumUtils.round(erc721item.getPriceInGHST(), 0) + " name: \"" + erc721item.getGotchi().getName() + "\"" + " listing id: " + erc721item.getId() + " ghst Balance: " + NumUtils.round(erc721item.getGotchi().getGhostBalance(), 2));
+					Gotchi g = erc721item.getGotchi();
+					g.setGhostBalance(ghstBalance);
+					erc721item.setGotchi(g);
 
+					if (erc721item.getGotchi().getGhostBalance() < settings.getMinGHSTBalance()) {
+						ghstBalanceRequirementFulfilled = false; 
+					}
+
+					// interesting discounts to print ..
+					if ((erc721item.getGotchi().getGhostBalance() >= 50.0d) && (erc721item.getPriceInGHST() < 2000)) {
+						LOGGER.info(" nice wallet stash discount - " + "haunt: " + haunt + " brs: " + NumUtils.round(brsScore, 2) + ", kinship=" + erc721item.getGotchi().getKinship() + " priceInGHST: " + NumUtils.round(erc721item.getPriceInGHST(), 0) + " name: \"" + erc721item.getGotchi().getName() + "\"" + " listing id: " + erc721item.getId() + " ghstBalance: " + NumUtils.round(erc721item.getGotchi().getGhostBalance(), 2));
+					}
+					
 					if (true &&
 							ghstBalanceRequirementFulfilled &&
 							(haunt <= settings.getMaxHAUNT()) &&
@@ -236,7 +258,7 @@ public class GotchiGraphQLUtils {
 							(kinship >= settings.getMinKINSHIP()) &&
 							true) {
 
-						LOGGER.debug(" - qualified candidate: " + "haunt: " + haunt + " brs: " + NumUtils.round(brsScore, 2) + ", kinship=" + erc721item.getGotchi().getKinship() + " priceInGHST: " + NumUtils.round(erc721item.getPriceInGHST(), 0) + " name: \"" + erc721item.getGotchi().getName() + "\"" + " listing id: " + erc721item.getId() + " ghst Balance: " + NumUtils.round(erc721item.getGotchi().getGhostBalance(), 2));
+						LOGGER.debug(" - qualified candidate: " + "haunt: " + haunt + " brs: " + NumUtils.round(brsScore, 2) + ", kinship=" + erc721item.getGotchi().getKinship() + " priceInGHST: " + NumUtils.round(erc721item.getPriceInGHST(), 0) + " name: \"" + erc721item.getGotchi().getName() + "\"" + " listing id: " + erc721item.getId() + " ghstBalance: " + NumUtils.round(erc721item.getGotchi().getGhostBalance(), 2));
 						matches.add(erc721item);
 					}
 

@@ -235,6 +235,7 @@ public class BazaarSettings {
 		System.out.println(" - autobuy: " + this.isAutoBuy());
 		System.out.println(" - apiTokenApp: " + this.getApiTokenApp());
 		System.out.println(" - apiTokenUser: " + this.getApiTokenUser());
+		System.out.println(" - providerURL: " + this.getProviderURL());
 		System.out.println(" - polygonscanAPIKEY: " + this.getPolygonscanAPIKEY());
 		System.out.println(" - theGraphPollFrequencyInSeconds: " + this.getTheGraphPollFrequencyInSeconds());
 		System.out.println(" - itemType: " + itemType);
@@ -249,7 +250,8 @@ public class BazaarSettings {
 
 	public void sanityCheck() {
 
-		if (this.isAutoBuy()) {
+		// Tx or checking wallet balances on-chain requires node rpc
+		if (this.isAutoBuy() || (this.getMinGHSTBalance()>=0.1d)) {
 			if (!this.getProviderURL().startsWith("http")) {
 				LOGGER.error("The providerURL must be set to a valid value, begining with http..");
 				SystemUtils.halt();

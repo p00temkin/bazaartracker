@@ -58,10 +58,14 @@ public class Start {
 		 */
 		EVMBlockChain maticBlockChain = null;
 		Web3j maticWeb3j = null;
+		maticBlockChain = new EVMBlockChain("Matic/Polygon", "MATIC", 137, settings.getProviderURL(), "https://polygonscan.com/");
+		maticWeb3j = Web3j.build(new HttpService(maticBlockChain.getNodeURL()));
+		
+		/**
+		 * Initialize wallet if we are in autobuy mood
+		 */
 		EVMLocalWallet maticWallet = null;
 		if (settings.isAutoBuy()) {
-			maticBlockChain = new EVMBlockChain("Matic/Polygon", "MATIC", 137, settings.getProviderURL(), "https://polygonscan.com/");
-			maticWeb3j = Web3j.build(new HttpService(maticBlockChain.getNodeURL()));
 
 			// Wallet setup + make sure MATIC balance is above 0
 			if (!"N/A".equals(settings.getWalletMnemonic())) maticWallet = new EVMLocalWallet("maticwallet", WalletOrigin.RECOVERY_MNEMONIC, "nopassword", settings.getWalletMnemonic());
@@ -81,7 +85,7 @@ public class Start {
 		 */
 		if (settings.getItemType() == BazaarItemType.GOTCHI) {
 			while (true) {
-				ArrayList<ERC721Listing> matchingBazaarItems721 = GotchiGraphQLUtils.getBazaarERC721sWithString(settings);
+				ArrayList<ERC721Listing> matchingBazaarItems721 = GotchiGraphQLUtils.getBazaarERC721sWithString(settings, maticWeb3j, maticBlockChain);
 				if (matchingBazaarItems721.isEmpty()) {
 					// Nothing available, keep going
 				} else {
@@ -180,11 +184,11 @@ public class Start {
 		options.addOption(apiTokenUser);
 
 		// API polygonscan
-		Option apiPolygonscan = new Option("k", "apikeypolygonscan", true, "The Polygonscan API key (https://polygonscan.com/myapikey)");
+		Option apiPolygonscan = new Option("o", "apikeypolygonscan", true, "The Polygonscan API key (https://polygonscan.com/myapikey)");
 		options.addOption(apiPolygonscan);
 
 		// item match string
-		Option matchSTR = new Option("y", "matchstring", true, "Bazaar item match string");
+		Option matchSTR = new Option("q", "matchstring", true, "Bazaar item name match string");
 		options.addOption(matchSTR);
 
 		// item price threshold (in GHST)
@@ -217,7 +221,7 @@ public class Start {
 		Option walletMnemonic = new Option("m", "walletmnemonic", true, "Wallet mnemonic");
 		options.addOption(walletMnemonic);
 
-		// wallet mnemonic
+		// wallet private key
 		Option walletPrivatekey = new Option("k", "walletprivkey", true, "Wallet private key");
 		options.addOption(walletPrivatekey);
 
@@ -228,6 +232,10 @@ public class Start {
 		// attempt autobuy
 		Option autoBuy = new Option("x", "autobuy", false, "Attempt to autobuy with GHST in your wallet");
 		options.addOption(autoBuy);
+		
+		// min GHST balance of gotchi wallet
+		Option minghstthreshold = new Option("y", "minghst", true, "Minimum GHST in target gotchi pocket");
+		options.addOption(minghstthreshold);
 
 		HelpFormatter formatter = new HelpFormatter();
 		CommandLineParser parser = new DefaultParser();
@@ -243,9 +251,9 @@ public class Start {
 			if (cmd.hasOption("x")) settings.setAutoBuy(true);
 			if (cmd.hasOption("a")) settings.setApiTokenApp(cmd.getOptionValue("apitokenappid"));
 			if (cmd.hasOption("u")) settings.setApiTokenUser(cmd.getOptionValue("apitokenuserid"));
-			if (cmd.hasOption("y")) settings.setMatchString(cmd.getOptionValue("matchstring"));
+			if (cmd.hasOption("q")) settings.setMatchString(cmd.getOptionValue("matchstring"));
 			if (cmd.hasOption("g")) settings.setGhstThresholdSTR(cmd.getOptionValue("ghstthreshold"));
-			if (cmd.hasOption("k")) settings.setPolygonscanAPIKEY(cmd.getOptionValue("apikeypolygonscan"));
+			if (cmd.hasOption("o")) settings.setPolygonscanAPIKEY(cmd.getOptionValue("apikeypolygonscan"));
 			if (cmd.hasOption("p")) settings.setProviderURL(cmd.getOptionValue("providerurl"));
 			if (cmd.hasOption("m")) settings.setWalletMnemonic(cmd.getOptionValue("walletmnemonic"));
 			if (cmd.hasOption("k")) settings.setWalletPrivKey(cmd.getOptionValue("walletprivkey"));
@@ -255,6 +263,7 @@ public class Start {
 			if (cmd.hasOption("b")) settings.setMinBRS(Double.parseDouble(cmd.getOptionValue("minbrs")));
 			if (cmd.hasOption("i")) settings.setMinKINSHIP(Double.parseDouble(cmd.getOptionValue("minkinship")));
 			if (cmd.hasOption("s")) settings.setTheGraphPollFrequencyInSeconds(Integer.parseInt(cmd.getOptionValue("graphpollfrequency")));
+			if (cmd.hasOption("y")) settings.setMinGHSTBalance(Double.parseDouble(cmd.getOptionValue("minghst")));
 
 			settings.sanityCheck();
 
