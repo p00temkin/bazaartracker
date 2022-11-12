@@ -129,7 +129,7 @@ public class Start {
 									+ FormatUtils.makeUINT256WithDec2Hex(1)    							    	// uint256 param2, amount
 									+ FormatUtils.makeUINT256WithDec2Hex(priceinWei);                           // uint256 param3, priceInWei
 
-							boolean txAttemptsCompleted = EVMUtils.makeRequest(buyRequest_hexData, txRetryThreshold, confirmTimeInSecondsBeforeRetry, connector, maticWallet, settings.getAavegotchiContractAddress(), haltOnUnconfirmedTX);
+							boolean txAttemptsCompleted = EVMUtils.makeSignedRequest(buyRequest_hexData, txRetryThreshold, confirmTimeInSecondsBeforeRetry, connector, maticWallet.getCredentials(), settings.getAavegotchiContractAddress(), haltOnUnconfirmedTX);
 							System.out.println("txAttemptsCompleted: " + txAttemptsCompleted);
 						} else {
 							String logMessage =  "We have a matching item match for string " + settings.getMatchString() + " and GHST threshold " + NumUtils.round(settings.getGhstThreshold(), 0) + " Available for " + NumUtils.round(lst.getPriceInGHST(), 0) + ". URL: " + baseURL + "/erc1155/" + lst.getId();
