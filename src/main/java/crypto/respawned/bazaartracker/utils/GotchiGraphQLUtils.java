@@ -11,12 +11,12 @@ import com.netflix.graphql.dgs.client.GraphQLResponse;
 import crypto.forestfish.enums.evm.PolygonERC20Token;
 import crypto.forestfish.objects.evm.EVMAccountBalance;
 import crypto.forestfish.objects.evm.connector.EVMBlockChainConnector;
-import crypto.forestfish.objects.evm.model.token.EVMERC20TokenInfo;
+import crypto.forestfish.objects.evm.model.erc20.EVMERC20TokenInfo;
 import crypto.forestfish.utils.ContractMapper;
 import crypto.forestfish.utils.EVMUtils;
 import crypto.forestfish.utils.GraphQLUtils;
 import crypto.forestfish.utils.NumUtils;
-import crypto.forestfish.utils.PolygonUtils;
+import crypto.forestfish.utils.PolygonscanUtils;
 import crypto.forestfish.utils.SystemUtils;
 import crypto.respawned.bazaartracker.BazaarSettings;
 import crypto.respawned.bazaartracker.ERC1155Listing;
@@ -220,7 +220,7 @@ public class GotchiGraphQLUtils {
 
 						Double ghstBalance1 = 0.0d;
 						if (settings.getPolygonscanAPIKEY().length() >= 4) {
-							ghstBalance1 = PolygonUtils.getERC20WalletBalance10kTx(erc721item.getGotchi().getEscrow(), settings.getPolygonscanAPIKEY(), PolygonERC20Token.GHST);
+							ghstBalance1 = PolygonscanUtils.getERC20WalletBalance10kTx(erc721item.getGotchi().getEscrow(), settings.getPolygonscanAPIKEY(), PolygonERC20Token.GHST);
 							LOGGER.debug("gotchi GHST balance (using polygonscan): " + NumUtils.round(ghstBalance1, 2));
 						} 
 
