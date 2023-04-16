@@ -12,7 +12,8 @@ public class BazaarSettings {
 	private static final Logger LOGGER = LoggerFactory.getLogger(BazaarSettings.class);
 
 	// App specific
-	private String theGraphQueryEndpointURI = "https://api.thegraph.com/subgraphs/name/aavegotchi/aavegotchi-core-matic";
+	//private String theGraphQueryEndpointURI = "https://api.thegraph.com/subgraphs/name/aavegotchi/aavegotchi-core-matic";
+	private String theGraphQueryEndpointURI = "https://subgraph.satsuma-prod.com/tWYl5n5y04oz/aavegotchi/aavegotchi-core-matic/api";
 	private int theGraphPollFrequencyInSeconds = 60;
 	private String erc1155ListingMethodID = "0x575ae876";
 	private boolean autoBuy = false;
