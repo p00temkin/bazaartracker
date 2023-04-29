@@ -5,14 +5,11 @@ import java.util.HashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.web3j.protocol.Web3j;
 import com.netflix.graphql.dgs.client.GraphQLResponse;
 
 import crypto.forestfish.enums.evm.PolygonERC20Token;
 import crypto.forestfish.objects.evm.EVMAccountBalance;
 import crypto.forestfish.objects.evm.connector.EVMBlockChainConnector;
-import crypto.forestfish.objects.evm.model.erc20.EVMERC20TokenInfo;
-import crypto.forestfish.utils.ContractMapper;
 import crypto.forestfish.utils.EVMUtils;
 import crypto.forestfish.utils.GraphQLUtils;
 import crypto.forestfish.utils.NumUtils;
@@ -187,78 +184,84 @@ public class GotchiGraphQLUtils {
 		} else {
 			for (ERC721Listing erc721item: candidates) {
 				erc721item.update();
-				Double brsScore = Double.parseDouble("" + erc721item.getGotchi().getBaseRarityScore());
-				Double kinship = Double.parseDouble("" + erc721item.getGotchi().getKinship());
-				Integer haunt = Integer.parseInt(erc721item.getGotchi().getHauntId());
 
-				Boolean debug = false;
-				String debugName = "455 kinship";
-				if (debug && erc721item.getGotchi().getName().toLowerCase().contains(debugName)) {
-					System.out.println(" - name: " + erc721item.getGotchi().getName());
-					System.out.println(" - brsScore: " + brsScore);
-					System.out.println(" - kinship: " + kinship);
-					System.out.println(" - haunt: " + haunt);
-					System.out.println(" - timepurchased: " + erc721item.getTimePurchased());
-					System.out.println(" - price: " + erc721item.getPriceInGHST());
-					System.out.println(" - locked: " + erc721item.getGotchi().isLocked());
-				}
+				// gotchi might be killed off
+				if (null != erc721item.getGotchi()) {
+					if (null != erc721item.getGotchi().getBaseRarityScore()) {
+						Double brsScore = Double.parseDouble("" + erc721item.getGotchi().getBaseRarityScore());
+						Double kinship = Double.parseDouble("" + erc721item.getGotchi().getKinship());
+						Integer haunt = Integer.parseInt(erc721item.getGotchi().getHauntId());
 
-				// Not sure why still there (sold but not cancelled)
-				if (false ||
-						(brsScore <= 100.0d) || // burned gotchis get brsScore of 0.0 
-						//(!erc721item.getGotchi().isLocked()) || // gotchis for sale should always be locked, but seems not the case?
-						!"0".equals(erc721item.getTimePurchased()) || // already sold unless 0
-						false) {
-					// disregard
-				} else {
+						Boolean debug = false;
+						String debugName = "455 kinship";
+						if (debug && erc721item.getGotchi().getName().toLowerCase().contains(debugName)) {
+							System.out.println(" - name: " + erc721item.getGotchi().getName());
+							System.out.println(" - brsScore: " + brsScore);
+							System.out.println(" - kinship: " + kinship);
+							System.out.println(" - haunt: " + haunt);
+							System.out.println(" - timepurchased: " + erc721item.getTimePurchased());
+							System.out.println(" - price: " + erc721item.getPriceInGHST());
+							System.out.println(" - locked: " + erc721item.getGotchi().isLocked());
+						}
 
-					boolean ghstBalanceRequirementFulfilled = true;
-					Double ghstBalance = 0.0d;
+						// Not sure why still there (sold but not cancelled)
+						if (false ||
+								(brsScore <= 100.0d) || // burned gotchis get brsScore of 0.0 
+								//(!erc721item.getGotchi().isLocked()) || // gotchis for sale should always be locked, but seems not the case?
+								!"0".equals(erc721item.getTimePurchased()) || // already sold unless 0
+								false) {
+							// disregard
+						} else {
 
-					// Grab the wallet GHST (if required as part of the query)
-					if (settings.getMinGHSTBalance() > 0.1d) { 
+							boolean ghstBalanceRequirementFulfilled = true;
+							Double ghstBalance = 0.0d;
 
-						Double ghstBalance1 = 0.0d;
-						if (settings.getPolygonscanAPIKEY().length() >= 4) {
-							ghstBalance1 = PolygonscanUtils.getERC20WalletBalance10kTx(erc721item.getGotchi().getEscrow(), settings.getPolygonscanAPIKEY(), PolygonERC20Token.GHST);
-							LOGGER.debug("gotchi GHST balance (using polygonscan): " + NumUtils.round(ghstBalance1, 2));
-						} 
+							// Grab the wallet GHST (if required as part of the query)
+							if (settings.getMinGHSTBalance() > 0.1d) { 
 
-						EVMAccountBalance bal = EVMUtils.getAccountBalanceForERC20Token(polygon_connector, erc721item.getGotchi().getEscrow(), PolygonERC20Token.GHST.toString());
-						Double ghstBalance2 = Double.parseDouble(bal.getBalanceInETH());
+								Double ghstBalance1 = 0.0d;
+								if (settings.getPolygonscanAPIKEY().length() >= 4) {
+									ghstBalance1 = PolygonscanUtils.getERC20WalletBalance10kTx(erc721item.getGotchi().getEscrow(), settings.getPolygonscanAPIKEY(), PolygonERC20Token.GHST);
+									LOGGER.debug("gotchi GHST balance (using polygonscan): " + NumUtils.round(ghstBalance1, 2));
+								} 
 
-						LOGGER.debug("gotchi GHST balance (using rpc node): " + NumUtils.round(ghstBalance2, 2));
-						
-						if (ghstBalance1 > 0.0d) ghstBalance = ghstBalance1;
-						if (ghstBalance2 > 0.0d) ghstBalance = ghstBalance2;
+								EVMAccountBalance bal = EVMUtils.getAccountBalanceForERC20Token(polygon_connector, erc721item.getGotchi().getEscrow(), PolygonERC20Token.GHST.toString());
+								Double ghstBalance2 = Double.parseDouble(bal.getBalanceInETH());
 
+								LOGGER.debug("gotchi GHST balance (using rpc node): " + NumUtils.round(ghstBalance2, 2));
+
+								if (ghstBalance1 > 0.0d) ghstBalance = ghstBalance1;
+								if (ghstBalance2 > 0.0d) ghstBalance = ghstBalance2;
+
+							}
+
+							Gotchi g = erc721item.getGotchi();
+							g.setGhostBalance(ghstBalance);
+							erc721item.setGotchi(g);
+
+							if (erc721item.getGotchi().getGhostBalance() < settings.getMinGHSTBalance()) {
+								ghstBalanceRequirementFulfilled = false; 
+							}
+
+							// interesting discounts to print ..
+							if ((erc721item.getGotchi().getGhostBalance() >= 50.0d) && (erc721item.getPriceInGHST() < 2000)) {
+								LOGGER.info(" nice wallet stash discount - " + "haunt: " + haunt + " brs: " + NumUtils.round(brsScore, 2) + ", kinship=" + erc721item.getGotchi().getKinship() + " priceInGHST: " + NumUtils.round(erc721item.getPriceInGHST(), 0) + " name: \"" + erc721item.getGotchi().getName() + "\"" + " listing id: " + erc721item.getId() + " ghstBalance: " + NumUtils.round(erc721item.getGotchi().getGhostBalance(), 2));
+							}
+
+							if (true &&
+									ghstBalanceRequirementFulfilled &&
+									(haunt <= settings.getMaxHAUNT()) &&
+									(erc721item.getPriceInGHST() <= settings.getGhstThreshold()) &&
+									(brsScore >= settings.getMinBRS()) &&
+									(kinship >= settings.getMinKINSHIP()) &&
+									true) {
+
+								LOGGER.debug(" - qualified candidate: " + "haunt: " + haunt + " brs: " + NumUtils.round(brsScore, 2) + ", kinship=" + erc721item.getGotchi().getKinship() + " priceInGHST: " + NumUtils.round(erc721item.getPriceInGHST(), 0) + " name: \"" + erc721item.getGotchi().getName() + "\"" + " listing id: " + erc721item.getId() + " ghstBalance: " + NumUtils.round(erc721item.getGotchi().getGhostBalance(), 2));
+								matches.add(erc721item);
+							}
+
+						}
 					}
-
-					Gotchi g = erc721item.getGotchi();
-					g.setGhostBalance(ghstBalance);
-					erc721item.setGotchi(g);
-
-					if (erc721item.getGotchi().getGhostBalance() < settings.getMinGHSTBalance()) {
-						ghstBalanceRequirementFulfilled = false; 
-					}
-
-					// interesting discounts to print ..
-					if ((erc721item.getGotchi().getGhostBalance() >= 50.0d) && (erc721item.getPriceInGHST() < 2000)) {
-						LOGGER.info(" nice wallet stash discount - " + "haunt: " + haunt + " brs: " + NumUtils.round(brsScore, 2) + ", kinship=" + erc721item.getGotchi().getKinship() + " priceInGHST: " + NumUtils.round(erc721item.getPriceInGHST(), 0) + " name: \"" + erc721item.getGotchi().getName() + "\"" + " listing id: " + erc721item.getId() + " ghstBalance: " + NumUtils.round(erc721item.getGotchi().getGhostBalance(), 2));
-					}
-					
-					if (true &&
-							ghstBalanceRequirementFulfilled &&
-							(haunt <= settings.getMaxHAUNT()) &&
-							(erc721item.getPriceInGHST() <= settings.getGhstThreshold()) &&
-							(brsScore >= settings.getMinBRS()) &&
-							(kinship >= settings.getMinKINSHIP()) &&
-							true) {
-
-						LOGGER.debug(" - qualified candidate: " + "haunt: " + haunt + " brs: " + NumUtils.round(brsScore, 2) + ", kinship=" + erc721item.getGotchi().getKinship() + " priceInGHST: " + NumUtils.round(erc721item.getPriceInGHST(), 0) + " name: \"" + erc721item.getGotchi().getName() + "\"" + " listing id: " + erc721item.getId() + " ghstBalance: " + NumUtils.round(erc721item.getGotchi().getGhostBalance(), 2));
-						matches.add(erc721item);
-					}
-
 				}
 			}
 		}
