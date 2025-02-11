@@ -43,7 +43,7 @@ public class Start {
 		/**
 		 *  Initialize connection to MATIC network
 		 */
-		EVMBlockChainConnector connector = new EVMBlockChainConnector(EVMChain.POLYGON);
+		EVMBlockChainConnector connector = new EVMBlockChainConnector(EVMChain.POLYGON, settings.isHalt_on_rpc_errors());
 
 		/**
 		 * Initialize wallet if we are in autobuy mood
@@ -129,8 +129,8 @@ public class Start {
 									+ FormatUtils.makeUINT256WithDec2Hex(1)    							    	// uint256 param2, amount
 									+ FormatUtils.makeUINT256WithDec2Hex(priceinWei);                           // uint256 param3, priceInWei
 
-							boolean txAttemptsCompleted = EVMUtils.makeSignedRequest(buyRequest_hexData, txRetryThreshold, confirmTimeInSecondsBeforeRetry, connector, maticWallet.getCredentials(), settings.getAavegotchiContractAddress(), haltOnUnconfirmedTX);
-							System.out.println("txAttemptsCompleted: " + txAttemptsCompleted);
+							String txHASH = EVMUtils.makeSignedRequest(buyRequest_hexData, txRetryThreshold, confirmTimeInSecondsBeforeRetry, connector, maticWallet.getCredentials(), settings.getAavegotchiContractAddress(), haltOnUnconfirmedTX);
+							System.out.println("txHASH: " + txHASH);
 						} else {
 							String logMessage =  "We have a matching item match for string " + settings.getMatchString() + " and GHST threshold " + NumUtils.round(settings.getGhstThreshold(), 0) + " Available for " + NumUtils.round(lst.getPriceInGHST(), 0) + ". URL: " + baseURL + "/erc1155/" + lst.getId();
 							NotificationUtils.pushover(settings.getApiTokenUser(), settings.getApiTokenApp(), "Gotchi BAZAAR time!", logMessage, MessagePriority.HIGH, baseURL + "/erc1155/" + lst.getId(), "Bazaar URL", "siren");

@@ -17,6 +17,7 @@ public class BazaarSettings {
 	private int theGraphPollFrequencyInSeconds = 60;
 	private String erc1155ListingMethodID = "0x575ae876";
 	private boolean autoBuy = false;
+	private boolean halt_on_rpc_errors = false;
 
 	// Generic
 	private String aavegotchiContractAddress = "0x86935f11c86623dec8a25696e1c19a8659cbf95d";
@@ -230,6 +231,14 @@ public class BazaarSettings {
 		this.walletPrivKey = walletPrivKey;
 	}
 
+	public boolean isHalt_on_rpc_errors() {
+		return halt_on_rpc_errors;
+	}
+
+	public void setHalt_on_rpc_errors(boolean halt_on_rpc_errors) {
+		this.halt_on_rpc_errors = halt_on_rpc_errors;
+	}
+
 	public void print() {
 		System.out.println("Settings:");
 		System.out.println(" - erc1155ListingMethodID: " + this.getErc1155ListingMethodID());
@@ -245,6 +254,7 @@ public class BazaarSettings {
 		System.out.println(" - minBRS: " + this.getMinBRS());
 		System.out.println(" - minKINSHIP: " + this.getMinKINSHIP());
 		System.out.println(" - maxHAUNT: " + this.getMaxHAUNT());
+		System.out.println(" - halt_on_rpc_errors: " + this.isHalt_on_rpc_errors());
 		System.out.println(" - minGHSTBalance: " + this.getMinGHSTBalance());
 		System.out.println(" - ghstThreshold: " + NumUtils.round(this.getGhstThreshold(), 0));
 	}
